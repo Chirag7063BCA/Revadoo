@@ -9,7 +9,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { client, urlFor, POST_QUERY, fmtDate } from './sanity';
+import { urlFor, fmtDate } from './sanity';
+import { fetchBlogPostBySlug } from '../../services/blog';
 import { closePost, openPostBySlug } from './Blogstore';
 
 const ORANGE = '#FF6B00';
@@ -387,7 +388,7 @@ export default function BlogPost({ post: initialPost, onBack, onReadRelated }) {
   useEffect(() => {
     setLoading(true);
     if (initialPost?._isSanity && initialPost.slug) {
-      client.fetch(POST_QUERY(initialPost.slug), { slug: initialPost.slug })
+      fetchBlogPostBySlug(initialPost.slug)
         .then(d  => { setPost(d || buildFallback(initialPost)); setLoading(false); })
         .catch(() => { setPost(buildFallback(initialPost));     setLoading(false); });
     } else {

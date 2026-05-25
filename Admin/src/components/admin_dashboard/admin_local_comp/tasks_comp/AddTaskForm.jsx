@@ -3,10 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import { Save, X, Link, Calendar, Upload, Clock } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+const BASE = `${API_BASE}/api`;
 const MAX_IMAGE_WIDTH = 1280;
 const MAX_IMAGE_HEIGHT = 720;
 const IMAGE_QUALITY = 0.8;
+
+const readJson = async (response) => {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
 
 const PTC_CATEGORY = {
   value: "ptc",
@@ -157,10 +168,10 @@ const AddTaskForm = ({ editTask, onSaved, onCancel }) => {
       thumbnail: form.thumbnail,
     };
     try {
-      const url    = editTask ? `${BASE}/api/admin/tasks/${editTask._id}` : `${BASE}/api/admin/tasks`;
+      const url    = editTask ? `${BASE}/admin/tasks/${editTask._id}` : `${BASE}/admin/tasks`;
       const method = editTask ? "PUT" : "POST";
       const res    = await fetch(url, { method, headers: getAuthHeaders(), body: JSON.stringify(payload) });
-      const data   = await res.json();
+      const data   = await readJson(res);
       if (!res.ok) throw new Error(data.message);
       setToast({ msg: editTask ? "Task updated!" : "Task created!", type: "success" });
       setTimeout(() => setToast(null), 3000);

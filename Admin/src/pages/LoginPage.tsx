@@ -31,10 +31,10 @@ const LoginPage = () => {
     if (errorMessage) setErrorMessage("");
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const isValidLogin = loginAdmin({
+    const isValidLogin = await loginAdmin({
       email: formData.email,
       password: formData.password,
     });

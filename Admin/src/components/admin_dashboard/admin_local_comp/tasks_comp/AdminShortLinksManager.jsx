@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Save, RefreshCw, Trash2, Power, Edit3, Upload, X } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+const BASE = `${API_BASE}/api`;
+
+const readJson = async (response) => {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
 
 const PRESETS = [
   {
@@ -83,10 +94,10 @@ const AdminShortLinksManager = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${BASE}/api/shortlinks/admin/list`, {
+      const res = await fetch(`${BASE}/shortlinks/admin/list`, {
         headers: getAuthHeaders(),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || "Failed to load shortlinks");
       setLinks(data.links || []);
     } catch (err) {
@@ -185,8 +196,8 @@ const AdminShortLinksManager = () => {
 
     try {
       const url = editingId
-        ? `${BASE}/api/shortlinks/admin/${editingId}`
-        : `${BASE}/api/shortlinks/admin`;
+        ? `${BASE}/shortlinks/admin/${editingId}`
+        : `${BASE}/shortlinks/admin`;
       const method = editingId ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -195,7 +206,7 @@ const AdminShortLinksManager = () => {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || "Failed to save shortlink");
 
       showToast(editingId ? "Shortlink updated" : "Shortlink created");
@@ -232,11 +243,11 @@ const AdminShortLinksManager = () => {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`${BASE}/api/shortlinks/admin/${id}`, {
+      const res = await fetch(`${BASE}/shortlinks/admin/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || "Delete failed");
       showToast("Shortlink deleted");
       if (editingId === id) resetForm();
@@ -248,11 +259,11 @@ const AdminShortLinksManager = () => {
 
   const handleToggle = async (id) => {
     try {
-      const res = await fetch(`${BASE}/api/shortlinks/admin/${id}/toggle`, {
+      const res = await fetch(`${BASE}/shortlinks/admin/${id}/toggle`, {
         method: "PATCH",
         headers: getAuthHeaders(),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || "Toggle failed");
       showToast("Shortlink status updated");
       load();

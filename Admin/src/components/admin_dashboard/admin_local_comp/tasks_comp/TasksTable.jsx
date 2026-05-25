@@ -3,9 +3,20 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { RefreshCw, Trash2, Power, Edit3, AlertTriangle, ChevronDown, ChevronRight, Search } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+const BASE = `${API_BASE}/api`;
 const CACHE_KEY = "admin_tasks_list_v2";
 const CACHE_TTL = 45_000;
+
+const readJson = async (response) => {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
 
 const readCache = () => {
   try {
@@ -158,10 +169,10 @@ const TasksTable = ({ refreshKey, onEdit }) => {
       if (silent) setRefreshing(true);
       else setLoading(true);
 
-      const res = await fetch(`${BASE}/api/admin/tasks`, {
+      const res = await fetch(`${BASE}/admin/tasks`, {
         headers: getAuthHeaders(),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || "Failed to load tasks");
       setTasks(Array.isArray(data) ? data : []);
       writeCache(Array.isArray(data) ? data : []);
@@ -184,12 +195,12 @@ const TasksTable = ({ refreshKey, onEdit }) => {
 
   const handleToggle = async (id) => {
     try {
-      const res  = await fetch(`${BASE}/api/admin/tasks/${id}/toggle`, {
+      const res  = await fetch(`${BASE}/admin/tasks/${id}/toggle`, {
         method: "PATCH",
         headers: getAuthHeaders(),
       });
 
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message);
       setTasks((prev) => {
         const next = prev.map((t) => t._id === id ? { ...t, isActive: !t.isActive } : t);
@@ -203,11 +214,11 @@ const TasksTable = ({ refreshKey, onEdit }) => {
   const handleDelete = async () => {
     if (!confirm) return;
     try {
-      const res  = await fetch(`${BASE}/api/admin/tasks/${confirm._id}`, {
+      const res  = await fetch(`${BASE}/admin/tasks/${confirm._id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message);
       setTasks((prev) => {
         const next = prev.filter((t) => t._id !== confirm._id);

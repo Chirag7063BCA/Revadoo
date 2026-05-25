@@ -53,6 +53,8 @@ const WalletBalanceCard = () => {
     setShowPaymentModal(true);
   };
 
+  const PaymentModal = paymentModalComponent;
+
   return (
     <div className="relative w-full overflow-hidden rounded-2xl bg-orange-500 p-6 font-['DM_Sans',sans-serif] sm:p-8">
       <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />

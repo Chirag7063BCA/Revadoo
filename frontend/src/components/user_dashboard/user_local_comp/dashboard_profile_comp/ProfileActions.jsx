@@ -19,7 +19,7 @@ const ProfileActions = () => {
       setShowConfirm(false);
       setShowSuccess(true);
       // Redirect after toast
-      setTimeout(() => { window.location.href = "/AuthPage"; }, 1800);
+      setTimeout(() => { window.location.href = "/authpage"; }, 1800);
     }, 800);
   };
 

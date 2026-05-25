@@ -23,6 +23,119 @@ const generateToken = (userId, email) => {
   );
 };
 
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/auth/google/callback';
+
+const getGoogleProfile = async ({ credential, code, email, name, picture }) => {
+  let googleEmail = email;
+  let googleName = name;
+  let googlePicture = picture;
+
+  if (code) {
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      throw new Error('Google client credentials are not configured on the server.');
+    }
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: GOOGLE_REDIRECT_URI,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    const tokenData = await tokenResponse.json().catch(() => ({}));
+    if (!tokenResponse.ok) {
+      throw new Error(tokenData.error_description || tokenData.error || 'Failed to exchange Google authorization code');
+    }
+
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+      },
+    });
+
+    const userInfo = await userInfoResponse.json().catch(() => ({}));
+    if (!userInfoResponse.ok || !userInfo.email) {
+      throw new Error('Failed to read Google profile from the authorization response');
+    }
+
+    googleEmail = userInfo.email;
+    googleName = userInfo.name || userInfo.given_name || googleName;
+    googlePicture = userInfo.picture || googlePicture;
+  } else if (credential) {
+    const tokenInfoResponse = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`,
+    );
+    const tokenInfo = await tokenInfoResponse.json().catch(() => ({}));
+
+    if (!tokenInfoResponse.ok || !tokenInfo.email) {
+      throw new Error('Invalid Google credential');
+    }
+
+    googleEmail = tokenInfo.email;
+    googleName = tokenInfo.name || tokenInfo.given_name || googleName;
+    googlePicture = tokenInfo.picture || googlePicture;
+  }
+
+  if (!googleEmail) {
+    throw new Error('Email is required');
+  }
+
+  return {
+    email: googleEmail,
+    name: googleName,
+    picture: googlePicture,
+  };
+};
+
+const ADMIN_CREDENTIALS = {
+  email: 'admin@revadoo.com',
+  password: 'Admin@123',
+};
+
+const generateAdminToken = () => {
+  return jwt.sign(
+    { userId: 'admin', email: ADMIN_CREDENTIALS.email, username: 'Admin', role: 'admin' },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+};
+
+router.post('/admin-login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+
+    if (
+      normalizedEmail !== ADMIN_CREDENTIALS.email ||
+      password !== ADMIN_CREDENTIALS.password
+    ) {
+      return res.status(401).json({ message: 'Invalid admin credentials' });
+    }
+
+    return res.json({
+      message: 'Admin login successful',
+      token: generateAdminToken(),
+      user: {
+        id: 'admin',
+        username: 'Admin',
+        email: ADMIN_CREDENTIALS.email,
+        role: 'admin',
+        creds: 0,
+      },
+    });
+  } catch (error) {
+    console.error('Admin login error:', error.message);
+    return res.status(500).json({ message: 'Server error. Please try again.' });
+  }
+});
+
 // ════════════════════════════════════════════════════════
 // @route   POST /api/auth/register
 // @access  Public
@@ -182,18 +295,16 @@ router.post('/login', async (req, res) => {
 // ════════════════════════════════════════════════════════
 router.post('/google', async (req, res) => {
   try {
-    const { email, name, picture } = req.body;
+    const { credential, code, email, name, picture } = req.body;
+    const googleProfile = await getGoogleProfile({ credential, code, email, name, picture });
+    const { email: googleEmail, name: googleName, picture: googlePicture } = googleProfile;
 
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
-
-    const lowerCaseEmail = email.toLowerCase();
+    const lowerCaseEmail = googleEmail.toLowerCase();
     let user = await User.findOne({ email: lowerCaseEmail });
 
     if (user) {
-      if (picture && user.avatar !== picture) {
-        user.avatar = picture;
+      if (googlePicture && user.avatar !== googlePicture) {
+        user.avatar = googlePicture;
         await user.save();
       }
 
@@ -221,7 +332,7 @@ router.post('/google', async (req, res) => {
       referralCode = generateReferralCode();
     }
 
-    let username = name || lowerCaseEmail.split('@')[0];
+    let username = googleName || lowerCaseEmail.split('@')[0];
     
     // Ensure username is unique if it happens to be taken (e.g., from email parsing)
     let usernameExists = await User.findOne({ username });
@@ -235,7 +346,7 @@ router.post('/google', async (req, res) => {
       password: hashedPassword,
       tempPassword: generatedPassword,
       referralCode,
-      avatar: picture || null,
+      avatar: googlePicture || null,
     });
 
     await newUser.save();

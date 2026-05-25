@@ -1,27 +1,48 @@
 import React, { useState, useRef, useEffect } from "react";
 
+import a1 from "../../../../assets/Avatar/a1.png";
+import a2 from "../../../../assets/Avatar/a2.png";
+import a3 from "../../../../assets/Avatar/a3.png";
+import a4 from "../../../../assets/Avatar/a4.png";
+import a5 from "../../../../assets/Avatar/a5.png";
+import a6 from "../../../../assets/Avatar/a6.png";
+import a7 from "../../../../assets/Avatar/a7.png";
+import a8 from "../../../../assets/Avatar/a8.png";
+import a9 from "../../../../assets/Avatar/a9.png";
+import a10 from "../../../../assets/Avatar/a10.png";
+import a11 from "../../../../assets/Avatar/a11.png";
+import a12 from "../../../../assets/Avatar/a12.png";
+import g1 from "../../../../assets/Avatar/g1.png";
+import g2 from "../../../../assets/Avatar/g2.png";
+import g3 from "../../../../assets/Avatar/g3.png";
+import g4 from "../../../../assets/Avatar/g4.png";
+import g5 from "../../../../assets/Avatar/g5.png";
+import g6 from "../../../../assets/Avatar/g6.png";
+import g7 from "../../../../assets/Avatar/g7.png";
+import g8 from "../../../../assets/Avatar/g8.png";
+
 
 const PRESET_AVATARS = [
-  { id: 1, src: "../../../../../src/assets/Avatar/a1.png" },
-  { id: 2, src: "../../../../../src/assets/Avatar/a2.png" },
-  { id: 3, src: "../../../../../src/assets/Avatar/a3.png" },
-  { id: 4, src: "../../../../../src/assets/Avatar/a4.png" },
-  { id: 5, src: "../../../../../src/assets/Avatar/a5.png" },
-  { id: 6, src: "../../../../../src/assets/Avatar/a6.png" },
-  { id: 7, src: "../../../../../src/assets/Avatar/a7.png" },
-  { id: 8, src: "../../../../../src/assets/Avatar/a8.png" },
-  { id: 9, src: "../../../../../src/assets/Avatar/a9.png" },
-  { id: 10, src: "../../../../../src/assets/Avatar/a10.png" },
-  { id: 11, src: "../../../../../src/assets/Avatar/a11.png" },
-  { id: 12, src: "../../../../../src/assets/Avatar/a12.png" },
-  { id: 13, src: "../../../../../src/assets/Avatar/g1.png" },
-  { id: 14, src: "../../../../../src/assets/Avatar/g2.png" },
-  { id: 15, src: "../../../../../src/assets/Avatar/g3.png" },
-  { id: 16, src: "../../../../../src/assets/Avatar/g4.png" },
-  { id: 17, src: "../../../../../src/assets/Avatar/g5.png" },
-  { id: 18, src: "../../../../../src/assets/Avatar/g6.png" },
-  { id: 19, src: "../../../../../src/assets/Avatar/g7.png" },
-  { id: 20, src: "../../../../../src/assets/Avatar/g8.png" },
+  { id: 1, src: a1, label: "Avatar 1" },
+  { id: 2, src: a2, label: "Avatar 2" },
+  { id: 3, src: a3, label: "Avatar 3" },
+  { id: 4, src: a4, label: "Avatar 4" },
+  { id: 5, src: a5, label: "Avatar 5" },
+  { id: 6, src: a6, label: "Avatar 6" },
+  { id: 7, src: a7, label: "Avatar 7" },
+  { id: 8, src: a8, label: "Avatar 8" },
+  { id: 9, src: a9, label: "Avatar 9" },
+  { id: 10, src: a10, label: "Avatar 10" },
+  { id: 11, src: a11, label: "Avatar 11" },
+  { id: 12, src: a12, label: "Avatar 12" },
+  { id: 13, src: g1, label: "Avatar 13" },
+  { id: 14, src: g2, label: "Avatar 14" },
+  { id: 15, src: g3, label: "Avatar 15" },
+  { id: 16, src: g4, label: "Avatar 16" },
+  { id: 17, src: g5, label: "Avatar 17" },
+  { id: 18, src: g6, label: "Avatar 18" },
+  { id: 19, src: g7, label: "Avatar 19" },
+  { id: 20, src: g8, label: "Avatar 20" },
 ];
 
 const ProfileHeader = () => {

@@ -7,7 +7,18 @@ import AdminTaskSubmissions from "../../components/admin_dashboard/admin_local_c
 import AddTaskForm from "../../components/admin_dashboard/admin_local_comp/tasks_comp/AddTaskForm";
 import AdminShortLinksManager from "../../components/admin_dashboard/admin_local_comp/tasks_comp/AdminShortLinksManager";
 
-const BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+const BASE = `${API_BASE}/api`;
+
+const readJson = async (response) => {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
 
 const AdminTask = () => {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -27,11 +38,11 @@ const AdminTask = () => {
     const loadStats = async () => {
       try {
         setStatsLoading(true);
-        const res = await fetch(`${BASE}/api/admin/tasks/stats`, {
+        const res = await fetch(`${BASE}/admin/tasks/stats`, {
           headers: getAuthHeaders(),
           signal: controller.signal,
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await readJson(res);
         if (!res.ok) throw new Error(data.message || "Failed to load stats");
         setStats(data);
       } catch (err) {

@@ -15,7 +15,7 @@ const VISIT_TTL_MS = 3 * 60 * 60 * 1000;
 const MIN_VERIFY_DELAY_MS = 8 * 1000;
 
 const getFrontendBaseUrl = () =>
-  (process.env.FRONTEND_BASE_URL || "http://localhost:5173").replace(/\/$/, "");
+  (process.env.FRONTEND_BASE_URL || process.env.CLIENT_URL || "http://localhost:5174").replace(/\/$/, "");
 
 const normalizeCode = (value = "") => String(value).trim().toLowerCase();
 

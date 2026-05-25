@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useSurvey } from "../../../../hooks/useSurveyApi"; 
+import { useSurvey } from "../../../../hooks/useSurvey"; 
 
 import SurveysHeader from "./SurveysHeader";
 import SurveysStats from "./SurveysStats";

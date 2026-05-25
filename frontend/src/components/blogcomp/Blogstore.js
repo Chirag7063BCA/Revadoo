@@ -11,7 +11,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { client, QUERY, FALLBACK_POSTS, normalizeSanity } from './sanity';
+import { FALLBACK_POSTS, normalizeSanity } from './sanity';
+import { fetchBlogPosts } from '../../services/blog';
 
 /* ═══════════════════════════════════════════════
    DATA STATE
@@ -32,20 +33,22 @@ function _setData(patch) {
 
 /* Core fetch — called on init, by the listener, and by the poller */
 function _fetchLatest() {
-  return client.fetch(QUERY)
-    .then(d => {
-      const has = !!(d && d.length);
+  return fetchBlogPosts()
+    .then(posts => {
+      const has = !!(posts && posts.length);
       _setData({
-        posts:    has ? d.map(normalizeSanity) : FALLBACK_POSTS,
+        posts:    has ? posts.map(normalizeSanity) : FALLBACK_POSTS,
         loading:  false,
         error:    null,
         isSanity: has,
       });
     })
-    .catch(() => {
+    .catch((error) => {
       // Only switch to fallback if we have no posts yet
       if (!_data.posts.length) {
         _setData({ posts: FALLBACK_POSTS, loading: false, isSanity: false });
+      } else {
+        _setData({ error: error?.message || 'Failed to refresh blog posts' });
       }
     });
 }
@@ -57,19 +60,7 @@ export function initBlogFetch() {
   // Initial fetch
   _fetchLatest();
 
-  // Layer 1: Sanity real-time WebSocket listener
-  // Fires instantly when a post is published/updated/deleted in Sanity Studio
-  try {
-    client.listen(QUERY).subscribe({
-      next:  () => _fetchLatest(),
-      error: () => {},  // silently ignore — poller is the fallback
-    });
-  } catch {
-    // listener not available — poller handles it
-  }
-
-  // Layer 2: Poll every 30 seconds
-  // Catches updates even if the WebSocket listener fails
+  // Poll every 30 seconds so the blog stays fresh without a browser Sanity connection.
   _pollInterval = setInterval(() => _fetchLatest(), 30_000);
 }
 

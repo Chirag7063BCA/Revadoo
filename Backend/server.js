@@ -20,6 +20,16 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const compression = require("compression");
 
+const normalizeOrigin = (value) => String(value || "").replace(/\/$/, "");
+const defaultOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  normalizeOrigin(process.env.CLIENT_URL || "http://localhost:5174"),
+  normalizeOrigin(process.env.FRONTEND_BASE_URL || ""),
+  normalizeOrigin(process.env.ADMIN_CLIENT_URL || ""),
+].filter(Boolean);
+const allowedOrigins = new Set(defaultOrigins);
+
 // Routes import
 const walletRoutes = require("./routes/walletRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -27,12 +37,24 @@ const userRoutes = require("./routes/userRoutes");
 const surveyRoutes = require("./routes/surveyRoutes");
 const leaderboardRoutes = require("./routes/leaderboard");
 const lotteryRoutes = require("./routes/lotteryRoutes");
+const blogRoutes = require("./routes/blog");
 
 // ✅ Initialize app FIRST
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 app.use(compression());
 // MUST be before express.json()
 app.use(
@@ -62,6 +84,7 @@ app.use("/api/attempts", require("./routes/attempts"));
 // Contact & Feedback Routes
 app.use("/api/contact", require("./routes/contactRoutes"));
 app.use("/api/feedback", require("./routes/feedback"));
+app.use("/api/blog", blogRoutes);
 app.use("/api/spin", require("./routes/spin"));
 app.use("/api/shortlinks", require("./routes/shortlinks"));
 
@@ -91,7 +114,7 @@ app.get("/", (req, res) => {
   });
 });
 
-const frontendBase = (process.env.FRONTEND_BASE_URL || "http://localhost:5173").replace(/\/$/, "");
+const frontendBase = (process.env.FRONTEND_BASE_URL || process.env.CLIENT_URL || "http://localhost:5174").replace(/\/$/, "");
 
 app.get("/s/:code", (req, res) => {
   return res.redirect(`${frontendBase}/s/${encodeURIComponent(req.params.code)}`);

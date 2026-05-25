@@ -20,7 +20,7 @@ const Adminleaderboard = () => {
   const fetchPlayers = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiGet("/api/admin/leaderboard?limit=100");
+      const data = await apiGet("/admin/leaderboard?limit=100");
       if (!data) { setPlayers([]); return; }
 
       // backend returns { players: [], total: N }
@@ -38,7 +38,7 @@ const Adminleaderboard = () => {
 
   // ── Fetch settings ───────────────────────────────────────────────────────────
   const fetchSettings = useCallback(async () => {
-    const data = await apiGet("/api/admin/leaderboard/settings");
+    const data = await apiGet("/admin/leaderboard/settings");
     if (data) setSettings(data);
   }, []);
 
@@ -49,7 +49,7 @@ const Adminleaderboard = () => {
 
   // ── Save settings ────────────────────────────────────────────────────────────
   const handleSaveSettings = async (form) => {
-    const data = await apiFetch("/api/admin/leaderboard/settings", {
+    const data = await apiFetch("/admin/leaderboard/settings", {
       method: "POST",
       body:   JSON.stringify(form),
     });
@@ -58,7 +58,7 @@ const Adminleaderboard = () => {
 
   // ── Edit points ──────────────────────────────────────────────────────────────
   const handleEditPoints = async (userId, points) => {
-    const data = await apiFetch(`/api/admin/leaderboard/points/${userId}`, {
+    const data = await apiFetch(`/admin/leaderboard/points/${userId}`, {
       method: "PUT",
       body:   JSON.stringify({ points }),
     });
@@ -67,7 +67,7 @@ const Adminleaderboard = () => {
 
   // ── Set manual leader ────────────────────────────────────────────────────────
   const handleSetLeader = async (userId) => {
-    const data = await apiFetch(`/api/admin/leaderboard/leader/${userId}`, {
+    const data = await apiFetch(`/admin/leaderboard/leader/${userId}`, {
       method: "PUT",
     });
     if (data) fetchPlayers();
@@ -76,7 +76,7 @@ const Adminleaderboard = () => {
   // ── Reset leaderboard ────────────────────────────────────────────────────────
   const handleReset = async (type) => {
     if (!window.confirm(`Reset ${type} leaderboard? This cannot be undone.`)) return;
-    const data = await apiFetch("/api/admin/leaderboard/reset", {
+    const data = await apiFetch("/admin/leaderboard/reset", {
       method: "POST",
       body:   JSON.stringify({ type }),
     });
@@ -85,7 +85,7 @@ const Adminleaderboard = () => {
 
   // ── Announce winners ─────────────────────────────────────────────────────────
   const handleAnnounce = async () => {
-    const data = await apiFetch("/api/admin/leaderboard/announce", { method: "POST" });
+    const data = await apiFetch("/admin/leaderboard/announce", { method: "POST" });
     if (!data) return;
     const msg = data.winners
       ?.map((w) => `#${w.rank} ${w.username} — ${w.points} pts`)
@@ -95,7 +95,7 @@ const Adminleaderboard = () => {
 
   // ── Export CSV ───────────────────────────────────────────────────────────────
   const handleExport = async () => {
-    const res = await fetch(`${BASE}/api/admin/leaderboard/export`, {
+    const res = await fetch(`${BASE}/admin/leaderboard/export`, {
       headers: { Authorization: `Bearer ${getToken()}` },
     });
     if (!res.ok) return;

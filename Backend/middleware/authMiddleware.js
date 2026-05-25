@@ -22,6 +22,17 @@ const protectRoute = async (req, res, next) => {
     // 3. Verify the token using our JWT secret
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (decoded.role === 'admin') {
+      req.user = {
+        _id: decoded.userId,
+        email: decoded.email,
+        username: decoded.username || 'Admin',
+        role: 'admin',
+        creds: 0,
+      };
+      return next();
+    }
+
     // 4. Find the user from the token's userId (exclude password)
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) {

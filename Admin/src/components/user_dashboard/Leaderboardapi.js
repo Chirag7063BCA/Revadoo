@@ -1,5 +1,6 @@
 
-export const BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+export const BASE = `${API_BASE}/api`;
 
 /** Tries every common key — works regardless of what your app uses */
 export const getToken = () =>
@@ -14,8 +15,11 @@ export const getToken = () =>
 
 /** GET helper — returns parsed JSON or null on failure */
 export const apiGet = async (path) => {
+  const token = getToken();
+  if (!token) return null;
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return null;
   return res.json();
@@ -23,11 +27,14 @@ export const apiGet = async (path) => {
 
 /** Generic fetch helper for POST / PUT */
 export const apiFetch = async (path, opts = {}) => {
+  const token = getToken();
+  if (!token) return null;
+
   const res = await fetch(`${BASE}${path}`, {
     ...opts,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
+      Authorization: `Bearer ${token}`,
       ...(opts.headers || {}),
     },
   });

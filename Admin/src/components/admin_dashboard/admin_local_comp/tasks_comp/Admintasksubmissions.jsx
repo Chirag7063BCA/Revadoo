@@ -4,7 +4,18 @@
 import { useEffect, useState, useCallback } from "react";
 import { RefreshCw, Check, X, DollarSign, Eye, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+const BASE = `${API_BASE}/api`;
+
+const readJson = async (response) => {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
 
 const STATUS_CONFIG = {
   pending:  { label: "Pending",  cls: "bg-yellow-100 text-yellow-700" },
@@ -22,11 +33,11 @@ const ScreenshotModal = ({ subId, onClose }) => {
     if (!subId) return;
     setLoading(true);
     const token = localStorage.getItem("token");
-    fetch(`${BASE}/api/admin/tasks/submissions/${subId}`, {
+    fetch(`${BASE}/admin/tasks/submissions/${subId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
-      .then((r) => r.json())
-      .then((d) => { setSub(d); setLoading(false); })
+      .then(async (r) => ({ response: r, data: await readJson(r) }))
+      .then(({ response, data }) => { if (!response.ok) throw new Error(data.message || "Failed to load submission"); setSub(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, [subId]);
 
@@ -116,9 +127,9 @@ const AdminTaskSubmissions = ({ refreshKey }) => {
   const load = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ page, limit: 15, ...(status && { status }) });
-    fetch(`${BASE}/api/admin/tasks/submissions?${params}`, { headers: getAuthHeaders() })
+    fetch(`${BASE}/admin/tasks/submissions?${params}`, { headers: getAuthHeaders() })
       .then(async (r) => {
-        const d = await r.json().catch(() => ({}));
+        const d = await readJson(r);
         if (!r.ok) throw new Error(d.message || "Failed to load submissions");
         return d;
       })
@@ -136,10 +147,10 @@ const AdminTaskSubmissions = ({ refreshKey }) => {
 
   const action = async (id, endpoint, body = {}) => {
     try {
-      const res  = await fetch(`${BASE}/api/admin/tasks/submissions/${id}/${endpoint}`, {
+      const res  = await fetch(`${BASE}/admin/tasks/submissions/${id}/${endpoint}`, {
         method: "PUT", headers: getAuthHeaders(true), body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message);
       showToast(data.message);
       load();
@@ -148,11 +159,11 @@ const AdminTaskSubmissions = ({ refreshKey }) => {
 
   const handlePayAll = async () => {
     try {
-      const res  = await fetch(`${BASE}/api/admin/tasks/submissions/pay-all/approved`, {
+      const res  = await fetch(`${BASE}/admin/tasks/submissions/pay-all/approved`, {
         method: "PUT",
         headers: getAuthHeaders(),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message);
       showToast(data.message);
       load();
