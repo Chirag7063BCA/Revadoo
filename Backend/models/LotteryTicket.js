@@ -10,6 +10,7 @@ const LotteryTicketSchema = new mongoose.Schema(
     ticketNumber: {
       type: String,
       required: [true, 'Ticket number is required'],
+      trim: true,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -19,10 +20,12 @@ const LotteryTicketSchema = new mongoose.Schema(
     userName: {
       type: String,
       default: null,
+      trim: true,
     },
     userEmail: {
       type: String,
       default: null,
+      trim: true,
     },
     purchasedAt: {
       type: Date,
@@ -51,7 +54,6 @@ const LotteryTicketSchema = new mongoose.Schema(
   }
 );
 
-// Compound index for unique ticket per lottery
 LotteryTicketSchema.index({ lotteryId: 1, ticketNumber: 1 }, { unique: true });
 LotteryTicketSchema.index({ lotteryId: 1, status: 1 });
 LotteryTicketSchema.index({ userId: 1 });

@@ -1,32 +1,26 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
-const getToken = () =>
-  localStorage.getItem('token') ||
-  localStorage.getItem('authToken') ||
-  localStorage.getItem('jwt') ||
-  localStorage.getItem('accessToken') ||
-  '';
+const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken') || '';
 
 const request = async (path, options = {}) => {
-  const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
   };
 
+  const token = getToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${BASE}${path}`, {
     ...options,
     headers,
   });
 
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data.message || `Request failed (${res.status})`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || `Request failed (${response.status})`);
   }
 
   return data;
@@ -38,23 +32,27 @@ export const createLotteryApi = (payload) =>
     body: JSON.stringify(payload),
   });
 
-export const getAdminLotteriesApi = () =>
-  request('/api/lotteries/admin/list', { method: 'GET' });
+export const updateLotteryApi = (id, payload) =>
+  request(`/api/lotteries/admin/${id}/update`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
 
-export const publishLotteryApi = (lotteryId) =>
-  request(`/api/lotteries/admin/${lotteryId}/publish`, { method: 'POST' });
+export const getAdminLotteriesApi = () => request('/api/lotteries/admin/list');
 
-export const deleteLotteryApi = (lotteryId) =>
-  request(`/api/lotteries/admin/${lotteryId}/delete`, { method: 'DELETE' });
+export const publishLotteryApi = (id) =>
+  request(`/api/lotteries/admin/${id}/publish`, { method: 'POST' });
 
-export const getLotteryTicketsApi = (lotteryId, status = '') =>
-  request(
-    `/api/lotteries/admin/${lotteryId}/tickets${status ? `?status=${encodeURIComponent(status)}` : ''}`,
-    { method: 'GET' }
-  );
-
-export const announceWinnerApi = (lotteryId, payload) =>
-  request(`/api/lotteries/admin/${lotteryId}/announce`, {
+export const announceWinnerApi = (id, payload) =>
+  request(`/api/lotteries/admin/${id}/announce`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+export const deleteLotteryApi = (id) =>
+  request(`/api/lotteries/admin/${id}/delete`, { method: 'DELETE' });
+
+export const getLotteryTicketsApi = (id, status = '', page = 1) =>
+  request(
+    `/api/lotteries/admin/${id}/tickets?status=${encodeURIComponent(status || '')}&page=${page}&limit=50`
+  );

@@ -1,155 +1,183 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
-const getToken = () =>
-  localStorage.getItem('token') ||
-  localStorage.getItem('authToken') ||
-  localStorage.getItem('jwt') ||
-  localStorage.getItem('accessToken') ||
-  localStorage.getItem('userToken') ||
-  sessionStorage.getItem('token') ||
-  sessionStorage.getItem('authToken') ||
-  '';
+const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken') || '';
 
-const api = axios.create({
-  baseURL: API_BASE,
-});
+const request = async (path, options = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
 
-const authHeaders = () => {
   const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || `Request failed (${response.status})`);
+  }
+
+  return data;
 };
 
-/**
- * Custom hook to fetch published lotteries
- */
 export const useLotteries = () => {
   const [lotteries, setLotteries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchLotteries = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/api/lotteries/published');
-        if (response.data.success) {
-          setLotteries(response.data.data);
+        const response = await request('/api/lotteries/published');
+        const liveLotteries = Array.isArray(response.data)
+          ? response.data.filter((lottery) => lottery.status === 'published')
+          : [];
+
+        if (mounted) {
+          setLotteries(liveLotteries);
           setError(null);
         }
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch lotteries');
-        setLotteries([]);
+        if (mounted) {
+          setError(err.message || 'Failed to fetch lotteries');
+          setLotteries([]);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchLotteries();
+    const timer = window.setInterval(fetchLotteries, 15000);
 
-    const pollId = window.setInterval(fetchLotteries, 15000);
-    return () => window.clearInterval(pollId);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   return { lotteries, loading, error };
 };
 
-/**
- * Custom hook to fetch user's tickets
- */
 export const useUserTickets = (deps = []) => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchUserTickets = async () => {
-      const token = getToken();
-      if (!token) {
-        setTickets([]);
-        setError(null);
-        setLoading(false);
+    let mounted = true;
+
+    const fetchTickets = async () => {
+      if (!getToken()) {
+        if (mounted) {
+          setTickets([]);
+          setLoading(false);
+          setError(null);
+        }
         return;
       }
 
       try {
         setLoading(true);
-        const response = await api.get('/api/lotteries/user/my-tickets', {
-          headers: authHeaders(),
-        });
-        if (response.data.success) {
-          setTickets(response.data.data);
+        const response = await request('/api/lotteries/user/my-tickets');
+        if (mounted) {
+          setTickets(response.data || []);
           setError(null);
         }
       } catch (err) {
-        if (err.response?.status === 401) {
-          // User not authenticated, skip error
-          setTickets([]);
-        } else {
-          setError(err.response?.data?.message || 'Failed to fetch tickets');
+        if (mounted) {
+          if (err.message?.toLowerCase().includes('not authorized')) {
+            setTickets([]);
+            setError(null);
+          } else {
+            setError(err.message || 'Failed to fetch tickets');
+          }
         }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchUserTickets();
+    fetchTickets();
+    return () => {
+      mounted = false;
+    };
   }, deps);
 
   return { tickets, loading, error };
 };
 
-/**
- * Custom hook to fetch lottery results
- */
 export const useLotteryResults = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchResults = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/api/lotteries/results');
-        if (response.data.success) {
-          setResults(response.data.data);
+        const response = await request('/api/lotteries/results');
+        if (mounted) {
+          setResults(response.data || []);
           setError(null);
         }
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch results');
-        setResults([]);
+        if (mounted) {
+          setResults([]);
+          setError(err.message || 'Failed to fetch results');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchResults();
+    const timer = window.setInterval(fetchResults, 15000);
 
-    const pollId = window.setInterval(fetchResults, 15000);
-    return () => window.clearInterval(pollId);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   return { results, loading, error };
 };
 
-/**
- * Function to buy a lottery ticket
- */
 export const buyLotteryTicket = async (lotteryId) => {
-  try {
-    const token = getToken();
-    if (!token) {
-      throw new Error('Please login first to buy a ticket');
-    }
-
-    const response = await api.post(`/api/lotteries/${lotteryId}/buy`, {}, {
-      headers: authHeaders(),
-    });
-    return response.data;
-  } catch (err) {
-    throw new Error(err.response?.data?.message || err.message || 'Failed to buy ticket');
+  const token = getToken();
+  if (!token) {
+    throw new Error('Please login first to buy a ticket');
   }
+
+  const response = await request(`/api/lotteries/${lotteryId}/buy`, {
+    method: 'POST',
+  });
+
+  const newBalance = response?.data?.newCreds;
+  window.dispatchEvent(
+    new CustomEvent('balanceUpdated', {
+      detail: { newBalance },
+    })
+  );
+
+  return response;
 };

@@ -324,7 +324,7 @@ router.put("/admin/:id", async (req, res) => {
     }
 
     const updated = await ShortLink.findByIdAndUpdate(req.params.id, update, {
-      new: true,
+      returnDocument: 'after',
     });
 
     if (!updated) {

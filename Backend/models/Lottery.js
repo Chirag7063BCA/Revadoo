@@ -10,11 +10,12 @@ const LotterySchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
+      default: '',
     },
     prizePool: {
       type: Number,
       required: [true, 'Prize pool amount is required'],
-      min: [0, 'Prize pool cannot be negative'],
+      min: [1, 'Prize pool must be greater than 0'],
     },
     entryFee: {
       type: Number,
@@ -26,6 +27,11 @@ const LotterySchema = new mongoose.Schema(
       required: [true, 'Total tickets count is required'],
       min: [1, 'Must have at least 1 ticket'],
     },
+    maxTicketsPerUser: {
+      type: Number,
+      default: 3,
+      min: [1, 'Max tickets per user must be at least 1'],
+    },
     ticketsSold: {
       type: Number,
       default: 0,
@@ -35,10 +41,6 @@ const LotterySchema = new mongoose.Schema(
       type: String,
       enum: ['draft', 'published', 'announced', 'completed'],
       default: 'draft',
-    },
-    drawDateTime: {
-      type: Date,
-      default: null,
     },
     publishAt: {
       type: Date,
@@ -56,6 +58,7 @@ const LotterySchema = new mongoose.Schema(
     preselectedWinningNumber: {
       type: String,
       default: null,
+      trim: true,
     },
     preGeneratedTicketNumbers: {
       type: [String],
@@ -64,21 +67,20 @@ const LotterySchema = new mongoose.Schema(
     winningNumber: {
       type: String,
       default: null,
+      trim: true,
     },
     winningAmount: {
       type: Number,
       default: 0,
     },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: false,
-      default: null,
-    },
     isAutoWinner: {
       type: Boolean,
       default: false,
-      description: 'True if winner was selected automatically',
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
   },
   {
@@ -86,9 +88,8 @@ const LotterySchema = new mongoose.Schema(
   }
 );
 
-// Index for faster queries
-LotterySchema.index({ status: 1, drawDateTime: 1 });
-LotterySchema.index({ createdBy: 1 });
-LotterySchema.index({ publishAt: 1, drawEndAt: 1 });
+LotterySchema.index({ status: 1 });
+LotterySchema.index({ drawEndAt: 1 });
+LotterySchema.index({ publishAt: 1 });
 
 module.exports = mongoose.model('Lottery', LotterySchema);

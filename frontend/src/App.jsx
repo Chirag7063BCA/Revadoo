@@ -120,7 +120,7 @@ import DashboardTasks from "./pages/userdashboard/DashboardTasks";
 import DashboardLeaderboard from "./pages/userdashboard/DashboardLeaderboard";
 import DashboardReferrals from "./pages/userdashboard/DashboardReferrals";
 import DashboardQuizzes from "./pages/userdashboard/DashboardQuizzes";
-import DashboardLottery from "./pages/userdashboard/DashboardLottery";
+import DashboardLottery from "./pages/DashboardLottery";
 import DashboardSettings from "./pages/userdashboard/DashboardSettings";
 import DashboardProfile from "./pages/userdashboard/DashboardProfile";
 import ShortLinkEntryPage from "./pages/ShortLinkEntryPage";

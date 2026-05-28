@@ -435,7 +435,7 @@ router.put('/update-creds', protectRoute, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { $inc: { creds: amount } },
-      { new: true, select: '-password' }
+      { returnDocument: 'after', select: '-password' }
     );
 
     res.status(200).json({
@@ -469,7 +469,7 @@ router.put('/update-profile', protectRoute, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { ...(username && { username }), ...(email && { email }) },
-      { new: true, select: '-password' }
+      { returnDocument: 'after', select: '-password' }
     );
 
     res.status(200).json({

@@ -1,5 +1,5 @@
 const ADMIN_AUTH_KEY = "adminAuth";
-const ADMIN_API_BASE = "http://localhost:5000/api";
+const ADMIN_API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 export const ADMIN_CREDENTIALS = {
   email: "admin@revadoo.com",

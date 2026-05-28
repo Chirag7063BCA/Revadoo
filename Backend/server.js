@@ -36,7 +36,7 @@ const userRoutes = require("./routes/userRoutes");
 // 👇 NEW: Survey route import kiya
 const surveyRoutes = require("./routes/surveyRoutes");
 const leaderboardRoutes = require("./routes/leaderboard");
-const lotteryRoutes = require("./routes/lotteryRoutes");
+const lotteryRoutes = require("./routes/lotteries");
 const blogRoutes = require("./routes/blog");
 
 // ✅ Initialize app FIRST

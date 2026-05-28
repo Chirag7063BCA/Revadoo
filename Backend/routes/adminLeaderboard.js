@@ -84,7 +84,7 @@ router.post("/reset", async (req, res) => {
     }[type];
 
     const update = tsField ? { [tsField]: new Date() } : {};
-    await Settings.findOneAndUpdate({ singletonKey: "main" }, update, { upsert: true });
+    await Settings.findOneAndUpdate({ singletonKey: "main" }, update, { upsert: true, returnDocument: 'after' });
 
     if (type === "all") await User.updateMany({}, { $set: { creds: 0 } });
 
