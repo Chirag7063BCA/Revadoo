@@ -129,24 +129,40 @@ const sendWithdrawalRequestEmail = async (
   await sendEmail(user.email, `💸 Withdrawal Request — ₹${amount} Processing`, html);
 };
 
-const sendWithdrawalCompletedEmail = async (user, { amount, referenceId }) => {
+const sendWithdrawalCompletedEmail = async (user, { amount, referenceId, method, accountDisplay }) => {
   const html = baseTemplate(`
     <h2 style="color:#0a0a0a;font-size:18px;margin:0 0 16px;">
-      🎉 Withdrawal Successful
+      🧾 Bank Statement Update
     </h2>
     <p style="color:#555;font-size:14px;line-height:1.6;">
-      ₹${amount} has been successfully sent to your account.
+      This amount has been credited from your Real Money Wallet to your bank account.
     </p>
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;
-      border-radius:8px;padding:16px;margin:20px 0;text-align:center;">
-      <p style="margin:0;font-size:28px;font-weight:700;color:#16a34a;">₹${amount}</p>
-      <p style="margin:8px 0 0;color:#555;font-size:13px;">Ref: ${referenceId}</p>
+    <div style="background:#f9f9f9;border:1px solid #ececec;
+      border-radius:8px;padding:16px;margin:20px 0;">
+      <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        <tr>
+          <td style="color:#888;padding:6px 0;">Transaction Type</td>
+          <td style="font-weight:700;color:#0a0a0a;text-align:right;">${method || "Bank Transfer"}</td>
+        </tr>
+        <tr>
+          <td style="color:#888;padding:6px 0;">Amount Credited</td>
+          <td style="font-weight:700;color:#16a34a;text-align:right;">₹${amount}</td>
+        </tr>
+        <tr>
+          <td style="color:#888;padding:6px 0;">Destination</td>
+          <td style="font-weight:700;color:#0a0a0a;text-align:right;">${accountDisplay || "Your bank account"}</td>
+        </tr>
+        <tr>
+          <td style="color:#888;padding:6px 0;">Reference ID</td>
+          <td style="font-weight:700;color:#FF6B35;text-align:right;font-family:monospace;">${referenceId}</td>
+        </tr>
+      </table>
     </div>
     <p style="color:#aaa;font-size:12px;">
-      Processed: ${new Date().toLocaleString("en-IN")}
+      Date: ${new Date().toLocaleString("en-IN")}
     </p>
   `);
-  await sendEmail(user.email, `🎉 ₹${amount} Withdrawal Successful`, html);
+  await sendEmail(user.email, `🧾 ₹${amount} Credited to Bank Account`, html);
 };
 
 const sendWithdrawalFailedEmail = async (user, { amount, reason }) => {

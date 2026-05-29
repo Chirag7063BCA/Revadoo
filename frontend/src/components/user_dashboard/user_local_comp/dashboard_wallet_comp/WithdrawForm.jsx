@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import PinInput from "./PinInput";
-import WithdrawalPinModal from "./WithdrawalPinModal";
 import AddBankAccountModal from "./AddBankAccountModal";
 import { apiUrl } from "../../../../services/apiConfig";
 
@@ -25,10 +24,6 @@ const WithdrawForm = () => {
   const [accounts, setAccounts] = useState([]);
   const [selectedBankAccountId, setSelectedBankAccountId] = useState("");
   const [showAddBankModal, setShowAddBankModal] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [withdrawalToken, setWithdrawalToken] = useState("");
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -161,10 +156,7 @@ const WithdrawForm = () => {
         return;
       }
 
-      setWithdrawalToken("");
       setStep(3);
-      setPin("");
-      setPinError("");
 
       if (bankAccountId) {
         setSelectedBankAccountId(bankAccountId);
@@ -180,12 +172,6 @@ const WithdrawForm = () => {
     try {
       setLoading(true);
       setError("");
-      setPinError("");
-
-      const pinResponse = await axios.post(apiUrl("/wallet/verify-withdrawal-pin"), {
-        userId,
-        pin,
-      });
 
       const response = await axios.post(apiUrl("/wallet/withdraw-to-bank"), {
         userId,
@@ -193,7 +179,6 @@ const WithdrawForm = () => {
         method,
         bankAccountId: method === "bank_transfer" ? selectedBankAccountId : undefined,
         upiId: method === "upi" ? bankForm.upiId : undefined,
-        withdrawalToken: pinResponse.data.withdrawalToken,
         bankDetails:
           method === "bank_transfer" && accounts.length === 0
             ? {
@@ -214,11 +199,7 @@ const WithdrawForm = () => {
       }, 2500);
     } catch (requestError) {
       const message = requestError.response?.data?.message || "Withdrawal failed";
-      setPinError(message);
       setError(message);
-      if (message.includes("No withdrawal PIN set")) {
-        setShowPinModal(true);
-      }
     } finally {
       setLoading(false);
     }
@@ -389,24 +370,9 @@ const WithdrawForm = () => {
           <div className="flex justify-between"><span>Method</span><span>{method === "bank_transfer" ? "Bank Transfer" : "UPI"}</span></div>
           <div className="flex justify-between"><span>Account</span><span>{method === "bank_transfer" ? (accounts.find((account) => account._id === selectedBankAccountId)?.bankName || bankForm.bankName || "Bank Account") : (bankForm.upiId || "UPI")}</span></div>
         </div>
-        <p className="mt-3 text-xs text-gray-500">Arrives in 2–3 business days</p>
+        <p className="mt-3 text-xs text-gray-500">The money will be credited to your bank account after confirmation.</p>
       </div>
 
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-medium text-gray-700">Enter withdrawal PIN</p>
-          <button
-            type="button"
-            onClick={() => setShowPinModal(true)}
-            className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-100"
-          >
-            Set a withdrawal PIN first
-          </button>
-        </div>
-        <PinInput value={pin} onChange={setPin} error={!!pinError} onComplete={setPin} />
-      </div>
-
-      {pinError ? <p className="text-sm text-red-600">{pinError}</p> : null}
       {successMessage ? <p className="text-sm font-medium text-green-600">{successMessage}</p> : null}
 
       <div className="flex justify-between gap-3">
@@ -420,7 +386,7 @@ const WithdrawForm = () => {
         <button
           type="button"
           onClick={confirmWithdraw}
-          disabled={loading || pin.length < 4}
+          disabled={loading}
           className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
         >
           {loading ? "Processing..." : "Confirm"}
@@ -431,19 +397,39 @@ const WithdrawForm = () => {
 
   if (!isOpen) {
     return (
-      <div className="w-full rounded-xl border border-gray-100 bg-white p-4 font-['DM_Sans',sans-serif] sm:p-5">
-        <div className="flex items-center justify-between gap-3">
+      <div className="relative w-full overflow-hidden rounded-3xl border border-orange-100 bg-gradient-to-br from-white via-orange-50 to-white p-5 font-['DM_Sans',sans-serif] shadow-sm sm:p-6">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-orange-100/60" />
+        <div className="relative flex h-full min-h-[240px] flex-col justify-between gap-6">
           <div>
-            <h3 className="text-base font-bold text-black">Withdraw Funds</h3>
-            <p className="text-sm text-gray-400">Open the secure 3-step withdrawal flow.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-500">Withdraw Funds</p>
+            <h3 className="mt-2 text-2xl font-bold text-gray-900">Send money to your bank</h3>
+            <p className="mt-2 max-w-md text-sm leading-6 text-gray-500">
+              Open the secure payout gateway, enter your bank or UPI details, verify your PIN, and submit a withdrawal request.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsOpen(true)}
-            className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600"
-          >
-            Start Withdrawal
-          </button>
+
+          <div className="rounded-2xl bg-white p-4 shadow-[0_8px_30px_rgba(255,107,53,0.08)]">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-gray-500">Available balance</span>
+              <span className="font-semibold text-gray-900">₹{formatAmount(availableBalance)}</span>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold text-gray-600">
+              <div className="rounded-xl bg-orange-50 px-3 py-2 text-center">Bank transfer</div>
+              <div className="rounded-xl bg-orange-50 px-3 py-2 text-center">UPI payout</div>
+              <div className="rounded-xl bg-orange-50 px-3 py-2 text-center">PIN secured</div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-gray-400">2-3 business days bank processing</p>
+            <button
+              type="button"
+              onClick={() => setIsOpen(true)}
+              className="rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-600"
+            >
+              Open Withdrawal
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -475,13 +461,6 @@ const WithdrawForm = () => {
         />
       ) : null}
 
-      {showPinModal ? (
-        <WithdrawalPinModal
-          userId={userId}
-          onClose={() => setShowPinModal(false)}
-          onSuccess={() => setShowPinModal(false)}
-        />
-      ) : null}
     </div>
   );
 };

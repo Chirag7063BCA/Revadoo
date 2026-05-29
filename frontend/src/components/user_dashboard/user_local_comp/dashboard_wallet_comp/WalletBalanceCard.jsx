@@ -9,14 +9,16 @@ const formatAmount = (value) =>
     maximumFractionDigits: 2,
   });
 
-const WalletBalanceCard = () => {
-  const [wallet, setWallet] = useState({ balance: 0 });
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentModalComponent, setPaymentModalComponent] = useState(null);
-  const [loadingPaymentModal, setLoadingPaymentModal] = useState(false);
-  const [paymentUnavailable, setPaymentUnavailable] = useState(false);
+const minimumCreds = 500;
 
+const WalletBalanceCard = () => {
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const [wallet, setWallet] = useState({ balance: 0, creds: Number(user?.creds || 0) });
+  const [credsToConvert, setCredsToConvert] = useState("");
+  const [converting, setConverting] = useState(false);
+  const [conversionError, setConversionError] = useState("");
+  const [conversionSuccess, setConversionSuccess] = useState("");
+
   const userId = user?._id || user?.id;
 
   const fetchBalance = async () => {
@@ -36,71 +38,122 @@ const WalletBalanceCard = () => {
     return () => window.removeEventListener("walletUpdated", handleUpdate);
   }, [userId]);
 
-  const openPaymentModal = async () => {
-    if (typeof window === "undefined" || window.location.protocol !== "https:") {
-      setPaymentUnavailable(true);
+  const handleConvertCreds = async () => {
+    const value = Number(credsToConvert);
+
+    if (!value || value < minimumCreds) {
+      setConversionError(`Minimum ${minimumCreds} Creds required to convert`);
       return;
     }
 
-    setPaymentUnavailable(false);
-    if (!paymentModalComponent) {
-      setLoadingPaymentModal(true);
-      const module = await import("./PaymentModal");
-      setPaymentModalComponent(() => module.default);
-      setLoadingPaymentModal(false);
+    if (value > Number(wallet.creds || 0)) {
+      setConversionError("Entered Creds exceed your available Creds");
+      return;
     }
 
-    setShowPaymentModal(true);
+    try {
+      setConverting(true);
+      setConversionError("");
+      setConversionSuccess("");
+
+      const response = await axios.post(apiUrl("/wallet/convert-creds"), {
+        userId,
+        credsToConvert: value,
+      });
+
+      setWallet((current) => ({
+        ...current,
+        balance: Number(response.data.newWalletBalance ?? current.balance),
+        creds: Number(response.data.newCredsBalance ?? current.creds),
+      }));
+      setCredsToConvert("");
+      setConversionSuccess("Creds converted successfully");
+      window.dispatchEvent(new Event("walletUpdated"));
+      setTimeout(() => setConversionSuccess(""), 2500);
+    } catch (error) {
+      setConversionError(error.response?.data?.message || "Conversion failed");
+    } finally {
+      setConverting(false);
+    }
   };
 
-  const PaymentModal = paymentModalComponent;
-
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl bg-orange-500 p-6 font-['DM_Sans',sans-serif] sm:p-8">
+    <div className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 p-6 font-['DM_Sans',sans-serif] shadow-[0_20px_60px_rgba(255,107,53,0.24)] sm:p-8">
       <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
       <div className="pointer-events-none absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-white/5" />
 
-      <p className="mb-2 text-sm font-medium text-white/75">Available Balance</p>
+      <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
+        <div className="rounded-2xl bg-white/10 p-4 text-white backdrop-blur">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/70">Creds</p>
+          <h2 className="mt-2 text-4xl font-bold leading-none tracking-tight sm:text-5xl">
+            {Number(wallet.creds || 0).toLocaleString("en-IN")}
+          </h2>
+          <p className="mt-3 text-sm text-white/70">
+            Convert your Creds into wallet cash when you are ready.
+          </p>
 
-      <h2 className="mb-1 text-4xl font-bold leading-none tracking-tight text-white sm:text-5xl">
-        ₹{formatAmount(wallet.balance)}
-      </h2>
+          <label className="mt-4 block">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Creds to convert</span>
+            <input
+              type="number"
+              min="1"
+              max={Number(wallet.creds || 0)}
+              value={credsToConvert}
+              onChange={(event) => setCredsToConvert(event.target.value)}
+              placeholder="Enter Creds"
+              className="mt-2 w-full rounded-xl border border-white/20 bg-white/15 px-4 py-3 text-base font-semibold text-white outline-none placeholder:text-white/50 focus:border-white/50"
+            />
+          </label>
+        </div>
 
-      <p className="mb-7 text-sm text-white/60">
-        Wallet funds stay synced with Stripe payments and withdrawals.
-      </p>
+        <div className="flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center">
+            <div className="hidden h-24 w-px bg-white/35 lg:block" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/30 bg-white/15 text-2xl font-bold text-white shadow-lg backdrop-blur">
+              ⇄
+            </div>
+            <div className="mt-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
+              Convert
+            </div>
+            <div className="hidden h-24 w-px bg-white/35 lg:block" />
+          </div>
+        </div>
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={openPaymentModal}
-          className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-black transition-colors duration-150 hover:bg-orange-50"
-        >
-          {loadingPaymentModal ? "Loading..." : "+ Add Money"}
-        </button>
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent("openWithdraw"))}
-          className="rounded-lg border border-white/40 bg-white/15 px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-white/25"
-        >
-          Withdraw
-        </button>
+        <div className="rounded-2xl bg-white/10 p-4 text-white backdrop-blur">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/70">Wallet Balance</p>
+          <h2 className="mt-2 text-4xl font-bold leading-none tracking-tight sm:text-5xl">
+            ₹{formatAmount(wallet.balance)}
+          </h2>
+          <p className="mt-3 text-sm text-white/70">
+            Real money balance available for withdrawal.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleConvertCreds}
+            disabled={converting}
+            className="mt-4 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {converting ? "Converting..." : "Convert Creds"}
+          </button>
+        </div>
       </div>
 
-      {paymentUnavailable ? (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Card payments are only available over HTTPS. Open the deployed site to add money.
-        </div>
-      ) : null}
-
-      {showPaymentModal && paymentModalComponent ? (
-        <PaymentModal
-          userId={userId}
-          onClose={() => setShowPaymentModal(false)}
-          onSuccess={(newBalance) => {
-            setWallet((current) => ({ ...current, balance: newBalance }));
-            window.dispatchEvent(new Event("walletUpdated"));
-          }}
-        />
-      ) : null}
+      <div className="relative mt-4 space-y-2">
+        <p className="text-sm text-white/70">
+          Wallet funds stay synced with Stripe payments and withdrawals.
+        </p>
+        {conversionError ? (
+          <div className="rounded-xl border border-red-200/40 bg-red-500/15 px-4 py-3 text-sm text-white">
+            {conversionError}
+          </div>
+        ) : null}
+        {conversionSuccess ? (
+          <div className="rounded-xl border border-emerald-200/40 bg-emerald-500/15 px-4 py-3 text-sm text-white">
+            {conversionSuccess}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };

@@ -17,7 +17,17 @@ const {
   sendSecurityAlertEmail,
 } = require("../utils/emailService");
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY?.trim();
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
+
+const requireStripe = (res) => {
+  if (!stripe) {
+    res.status(503).json({ message: "Stripe is not configured on the server." });
+    return false;
+  }
+
+  return true;
+};
 
 const getOrCreateWallet = async (userId) => {
   let wallet = await Wallet.findOne({ userId });
@@ -25,6 +35,21 @@ const getOrCreateWallet = async (userId) => {
     wallet = await Wallet.create({ userId });
   }
   return wallet;
+};
+
+const syncWalletCredsFromUser = async (wallet, userId) => {
+  const user = await User.findById(userId).select("creds");
+  if (!user) {
+    return { user: null, creds: Number(wallet.creds || 0) };
+  }
+
+  const userCreds = Number(user.creds || 0);
+  if (Number(wallet.creds || 0) !== userCreds) {
+    wallet.creds = userCreds;
+    await wallet.save();
+  }
+
+  return { user, creds: userCreds };
 };
 
 const generateReferenceId = () => {
@@ -47,6 +72,7 @@ const getBalance = async (req, res) => {
   try {
     const { userId } = req.params;
     const wallet = await getOrCreateWallet(userId);
+    const { creds } = await syncWalletCredsFromUser(wallet, userId);
     const pending = await WithdrawalRequest.aggregate([
       { $match: { userId: wallet.userId, status: "pending" } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
@@ -54,7 +80,7 @@ const getBalance = async (req, res) => {
 
     const balance = {
       balance: wallet.balance,
-      creds: wallet.creds,
+      creds,
       totalEarned: wallet.totalEarned,
       totalWithdrawn: wallet.totalWithdrawn,
       pendingWithdrawals: pending[0]?.total || 0,
@@ -165,22 +191,30 @@ const convertCreds = async (req, res) => {
 
     const value = Number(credsToConvert);
     const wallet = await getOrCreateWallet(userId);
+    const user = await User.findById(userId);
 
-    if (wallet.creds < minimum) {
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const currentCreds = Number(user.creds || 0);
+
+    if (currentCreds < minimum) {
       return res.status(400).json({
         message: `Minimum ${minimum} Creds required to convert`,
       });
     }
 
-    if (wallet.creds < value) {
+    if (currentCreds < value) {
       return res.status(400).json({ message: "Insufficient Creds balance" });
     }
 
     const inrAmount = parseFloat((value * rate).toFixed(2));
-    wallet.creds -= value;
+    user.creds = currentCreds - value;
+    wallet.creds = user.creds;
     wallet.balance += inrAmount;
     wallet.totalEarned += inrAmount;
-    await wallet.save();
+    await Promise.all([user.save(), wallet.save()]);
 
     await Transaction.create({
       userId,
@@ -192,18 +226,15 @@ const convertCreds = async (req, res) => {
       category: "creds_conversion",
     });
 
-    const user = await User.findById(userId);
-    if (user) {
-      sendConversionEmail(user, {
-        credsConverted: value,
-        newWalletBalance: wallet.balance,
-      }).catch(() => {});
-    }
+    sendConversionEmail(user, {
+      credsConverted: value,
+      newWalletBalance: wallet.balance,
+    }).catch(() => {});
 
     res.json({
       message: "Creds converted successfully",
       newWalletBalance: wallet.balance,
-      newCredsBalance: wallet.creds,
+      newCredsBalance: user.creds,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -299,19 +330,8 @@ const verifyWithdrawalPin = async (req, res) => {
 
 const withdrawToBank = async (req, res) => {
   try {
-    const { userId, amount, method, bankAccountId, upiId, withdrawalToken, bankDetails } = req.body;
+    const { userId, amount, method, bankAccountId, upiId, bankDetails } = req.body;
     const minimum = parseInt(process.env.MIN_WITHDRAWAL_INR, 10) || 100;
-
-    let decoded;
-    try {
-      decoded = jwt.verify(withdrawalToken, process.env.JWT_SECRET);
-    } catch {
-      return res.status(401).json({ message: "Withdrawal session expired. Please verify your PIN again." });
-    }
-
-    if (decoded.userId !== userId || decoded.purpose !== "withdrawal") {
-      return res.status(401).json({ message: "Invalid withdrawal token." });
-    }
 
     const value = parseFloat(amount);
     if (!value || value < minimum) {
@@ -407,7 +427,7 @@ const withdrawToBank = async (req, res) => {
 
     const user = await User.findById(userId);
     if (user) {
-      sendWithdrawalRequestEmail(user, {
+      sendWithdrawalCompletedEmail(user, {
         amount: value,
         method: method === "upi" ? "UPI" : "Bank Transfer",
         referenceId,
@@ -416,7 +436,7 @@ const withdrawToBank = async (req, res) => {
     }
 
     res.json({
-      message: "Withdrawal request submitted. Funds will arrive in 2–3 business days.",
+      message: "Withdrawal completed successfully.",
       referenceId,
       balance: wallet.balance,
       transactionId: txn._id,
