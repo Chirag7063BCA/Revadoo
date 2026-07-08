@@ -46,7 +46,24 @@ const app = express();
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.has(origin)) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const normalized = normalizeOrigin(origin);
+
+      // Check if it is in the explicitly configured allowed origins
+      if (allowedOrigins.has(normalized)) {
+        return callback(null, true);
+      }
+
+      // Allow local development origins
+      if (/^http:\/\/localhost(:\d+)?$/.test(normalized) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(normalized)) {
+        return callback(null, true);
+      }
+
+      // Allow Vercel preview or production deployments
+      if (/^https:\/\/.*\.vercel\.app$/.test(normalized)) {
         return callback(null, true);
       }
 
