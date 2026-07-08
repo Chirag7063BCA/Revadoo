@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FiActivity, FiAward, FiBookOpen, FiCalendar, FiDollarSign, FiShield, FiUsers } from "react-icons/fi";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 const RANGES = ["daily", "weekly", "monthly", "yearly", "overall"];
 
 const palette = {

@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutAdmin } from "../../../utils/adminAuth";
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+
 const AdminHeader = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = React.useState({
@@ -53,7 +55,7 @@ const AdminHeader = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await fetch("http://localhost:5000/api/auth/me", {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

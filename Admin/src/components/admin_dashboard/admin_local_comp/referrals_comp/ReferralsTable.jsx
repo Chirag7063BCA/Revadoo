@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Trash2, AlertTriangle,
 } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 
 const STATUS_PILL = {
   Active:   "bg-green-100 text-green-700",

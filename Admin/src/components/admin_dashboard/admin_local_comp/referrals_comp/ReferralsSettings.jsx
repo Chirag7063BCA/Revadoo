@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Save, CheckCircle, XCircle, Settings } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 
 const DEFAULT = {
   baseReward:      50,

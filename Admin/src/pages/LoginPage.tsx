@@ -34,13 +34,13 @@ const LoginPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const isValidLogin = await loginAdmin({
+    const result = await loginAdmin({
       email: formData.email,
       password: formData.password,
     });
 
-    if (!isValidLogin) {
-      setErrorMessage("Only the fixed admin credentials can access this dashboard.");
+    if (!result.success) {
+      setErrorMessage(result.message || "Only the fixed admin credentials can access this dashboard.");
       return;
     }
 

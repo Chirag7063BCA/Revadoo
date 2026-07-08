@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+
 const StatCard = ({ label, value, accent = false }) => (
   <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
     <p className="mb-1 text-xs font-medium text-gray-400">{label}</p>
@@ -28,7 +30,7 @@ const AdminWalletStats = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/wallet/admin/withdrawals?status=all&page=1&limit=1000");
+      const response = await axios.get(`${API_BASE}/api/wallet/admin/withdrawals?status=all&page=1&limit=1000`);
       const requests = response.data.requests || [];
       const todayKey = new Date().toDateString();
 

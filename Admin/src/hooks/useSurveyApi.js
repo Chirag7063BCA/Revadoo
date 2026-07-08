@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+
 export const useSurvey = () => {
   const [surveys, setSurveys] = useState([]);
   const [activeSurvey, setActiveSurvey] = useState(null);
@@ -25,7 +27,7 @@ export const useSurvey = () => {
   const loadSurveys = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/surveys/all');
+      const res = await axios.get(`${API_BASE}/api/surveys/all`);
       setSurveys(res.data || []);
       setError('');
     } catch {
@@ -37,7 +39,7 @@ export const useSurvey = () => {
 
   const removeSurvey = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/surveys/delete/${id}`);
+      await axios.delete(`${API_BASE}/api/surveys/delete/${id}`);
       setSurveys(surveys.filter(s => s._id !== id));
     } catch (err) {
       console.error("Failed to delete", err);
@@ -78,7 +80,7 @@ export const useSurvey = () => {
       if (!userId) userId = "65f1a2b3c4d5e6f7a8b9c0d1"; // Test ID
 
       // Backend ko submit request bhejna
-      const res = await axios.post(`http://localhost:5000/api/surveys/submit/${activeSurvey._id}`, { userId });
+      const res = await axios.post(`${API_BASE}/api/surveys/submit/${activeSurvey._id}`, { userId });
       
       // 🔥 NAYA MYSTERY CRATE LOGIC (Catching Gamified Data from Backend)
       // Agar backend se naya data nahi bhi aaya, toh purana logic fail na ho isliye fallback lagaya hai

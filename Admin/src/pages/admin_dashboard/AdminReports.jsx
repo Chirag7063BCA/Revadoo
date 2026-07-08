@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FiDownload, FiLayers, FiPieChart } from "react-icons/fi";
 import { downloadPdf } from "../../utils/pdfReport";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 const RANGES = ["daily", "weekly", "monthly", "yearly", "overall"];
 
 const formatNumber = (value) => Number(value || 0).toLocaleString();

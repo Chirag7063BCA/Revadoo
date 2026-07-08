@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+
 const AddSurveyForm = ({ onSurveyCreated }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -68,7 +70,7 @@ const AddSurveyForm = ({ onSurveyCreated }) => {
 
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/surveys/add", surveyData);
+      await axios.post(`${API_BASE}/api/surveys/add`, surveyData);
       setSuccess("Survey created! It will auto-delete after the set time.");
       setTitle(""); setDescription(""); setThumbnail(""); setExpiresAt(""); setReward(10);
       setQuestions([{ text: "", options: ["", ""] }]);

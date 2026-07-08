@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 
 const ReferralsHeader = () => {
   const [total,   setTotal]   = useState(null);

@@ -1,5 +1,5 @@
 const ADMIN_AUTH_KEY = "adminAuth";
-const ADMIN_API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const ADMIN_API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 
 export const ADMIN_CREDENTIALS = {
   email: "admin@revadoo.com",
@@ -27,7 +27,7 @@ export const loginAdmin = async ({ email, password }) => {
   const normalizedEmail = email.trim().toLowerCase();
 
   try {
-    const response = await fetch(`${ADMIN_API_BASE}/auth/admin-login`, {
+    const response = await fetch(`${ADMIN_API_BASE}/api/auth/admin-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: normalizedEmail, password }),
@@ -35,7 +35,7 @@ export const loginAdmin = async ({ email, password }) => {
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      return false;
+      return { success: false, message: data.message || "Invalid admin credentials." };
     }
 
     localStorage.setItem(ADMIN_AUTH_KEY, "true");
@@ -48,10 +48,10 @@ export const loginAdmin = async ({ email, password }) => {
     );
   } catch (error) {
     console.warn("Unable to persist admin auth state", error);
-    return false;
+    return { success: false, message: "Failed to connect to the backend server. Please verify your deployment API configuration and check that the server is running." };
   }
 
-  return true;
+  return { success: true };
 };
 
 export const logoutAdmin = () => {

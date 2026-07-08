@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { BookOpen, BarChart3, TrendingUp, Users } from "lucide-react";
 import QuizStatCard from "./QuizStatCard";
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+
 const AdminQuizStats = ({ totalQuizzes = 0 }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,7 +15,7 @@ const AdminQuizStats = ({ totalQuizzes = 0 }) => {
     const fetchStats = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/attempts/admin-stats",
+          `${API_BASE}/api/attempts/admin-stats`,
           { signal: controller.signal },
         );
         if (!response.ok) throw new Error("Failed to fetch admin stats");

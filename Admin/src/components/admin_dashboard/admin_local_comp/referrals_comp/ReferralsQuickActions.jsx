@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DollarSign, Download, BarChart2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
 
-const BASE = "http://localhost:5000";
+const BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 
 const ReferralsQuickActions = ({ onRefresh }) => {
   const [toast,          setToast]          = useState(null);

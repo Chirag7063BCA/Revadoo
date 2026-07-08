@@ -25,7 +25,7 @@ const UserManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [limit] = useState(5);
 
-  const API_BASE_URL = "http://localhost:5000/api";
+  const API_BASE_URL = `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "")}/api`;
   const token = localStorage.getItem("token");
 
   const headers = useMemo(() => ({

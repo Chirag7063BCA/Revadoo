@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+
 const filters = [
   { label: "All", value: "all" },
   { label: "Pending", value: "pending" },
@@ -28,7 +30,7 @@ const AdminWithdrawalRequests = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:5000/api/wallet/admin/withdrawals?status=${filter}&page=${requestedPage}&limit=10`
+        `${API_BASE}/api/wallet/admin/withdrawals?status=${filter}&page=${requestedPage}&limit=10`
       );
       setRequests(response.data.requests || []);
       setPage(response.data.page || requestedPage);
@@ -59,7 +61,7 @@ const AdminWithdrawalRequests = () => {
   const submitAction = async () => {
     if (!actionModal) return;
     try {
-      await axios.post(`http://localhost:5000/api/wallet/admin/withdrawals/${actionModal.id}/action`, {
+      await axios.post(`${API_BASE}/api/wallet/admin/withdrawals/${actionModal.id}/action`, {
         action: actionModal.action,
         adminNote,
       });
