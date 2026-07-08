@@ -8,12 +8,19 @@
     "checkJs": false,
     "noEmit": true,
     "outDir": "./dist-ts",
-    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src", "vite.config.js", "index.html"],
-  "exclude": ["node_modules", "dist", "build"]
+  "include": [
+    "src",
+    "vite.config.js",
+    "index.html"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ]
 }
