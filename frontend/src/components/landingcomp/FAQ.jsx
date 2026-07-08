@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useReveal } from './useReveal'
+import { useReveal } from './UseReveal'
 
 const FAQS = [
   { q: 'Is REVADOO really free to join?', a: "Yes, completely free. There are no subscription fees, no premium tiers that gate earnings, and no hidden charges. You sign up, complete tasks, and earn. That's it." },

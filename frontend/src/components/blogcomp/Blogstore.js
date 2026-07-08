@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { FALLBACK_POSTS, normalizeSanity } from './sanity';
+import { FALLBACK_POSTS, normalizeSanity } from './Sanity';
 import { fetchBlogPosts } from '../../services/blog';
 
 /* ═══════════════════════════════════════════════

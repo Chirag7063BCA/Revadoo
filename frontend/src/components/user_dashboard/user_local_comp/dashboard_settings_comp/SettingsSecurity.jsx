@@ -6,7 +6,7 @@ import {
   ShieldCheck, Lock, Trash2, Eye, EyeOff,
   Loader2, CheckCircle2, AlertCircle, ChevronRight,
 } from "lucide-react";
-import SettingsModal from "./SettingsModal";
+import SettingsModal from "./Settingsmodal";
 import { apiUrl } from "../../../../services/apiConfig";
 
 // ── Password input component ──────────────────────────

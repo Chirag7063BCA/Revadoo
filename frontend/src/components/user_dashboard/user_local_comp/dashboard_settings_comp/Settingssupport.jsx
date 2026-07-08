@@ -7,7 +7,7 @@ import {
   Send, Loader2, CheckCircle2, AlertCircle, Paperclip, X,
   Image, FileText, File, Mail
 } from "lucide-react";
-import SettingsModal from "./SettingsModal";
+import SettingsModal from "./Settingsmodal";
 import { apiUrl } from "../../../../services/apiConfig";
 
 const FAQS = [

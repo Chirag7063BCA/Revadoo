@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { urlFor, fmtDate } from './sanity';
+import { urlFor, fmtDate } from './Sanity';
 import { fetchBlogPostBySlug } from '../../services/blog';
 import { closePost, openPostBySlug } from './Blogstore';
 
