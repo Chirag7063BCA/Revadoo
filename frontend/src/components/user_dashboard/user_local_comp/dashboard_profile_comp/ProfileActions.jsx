@@ -2,8 +2,10 @@
 // Redesigned logout — custom yes/no modal + success toast, no browser confirm()
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ProfileActions = () => {
+  const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [loggingOut,  setLoggingOut]  = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -19,7 +21,7 @@ const ProfileActions = () => {
       setShowConfirm(false);
       setShowSuccess(true);
       // Redirect after toast
-      setTimeout(() => { window.location.href = "/authpage"; }, 1800);
+      setTimeout(() => { navigate("/authpage"); }, 1800);
     }, 800);
   };
 
