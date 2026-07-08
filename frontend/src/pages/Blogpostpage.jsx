@@ -11,7 +11,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBlogData, setNavigate } from '../components/blogcomp/Blogstore';
-import BlogPost from '../components/blogcomp/Blogpost';
+import BlogPost from '../components/blogcomp/BlogPost';
 
 /* Global CSS (same keyframes Blog.jsx injects on the listing page) */
 const PAGE_CSS = `
